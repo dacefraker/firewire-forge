@@ -12,6 +12,7 @@ import Step4Elevators from './steps/Step4Elevators';
 import Step5OccupancyTypes from './steps/Step5OccupancyTypes';
 import Step6PartsSpecifications from './steps/Step6PartsSpecifications';
 import Step7Files from './steps/Step7Files';
+import ChoiceScreen from './steps/ChoiceScreen';
 import FinalCTAScreen from './steps/FinalCTAScreen';
 
 export interface WizardData {
@@ -74,11 +75,12 @@ export interface WizardData {
 const STEP_TITLES = [
   'Project Location',
   'Add-ons',
+  'Files',
+  'Next Steps',
   'Sprinklers',
   'Elevators', 
   'Occupancy Types',
   'Parts Specifications',
-  'Files',
   'Complete'
 ];
 
@@ -90,6 +92,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDetailedQuestions, setShowDetailedQuestions] = useState(false);
   
   const [wizardData, setWizardData] = useState<WizardData>({
     name: '',
@@ -131,24 +134,30 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
   };
 
   const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 0: // Step 1
+    // Adjust step validation for new flow
+    const actualStep = showDetailedQuestions && step >= 4 ? step : step;
+    
+    switch (actualStep) {
+      case 0: // Step 1 - Project Location
         return wizardData.name.trim() !== '' && wizardData.state.trim() !== '';
-      case 1: // Step 2
+      case 1: // Step 2 - Add-ons
         return true; // No required fields
-      case 2: // Step 3
+      case 2: // Step 3 - Files
+        return true; // Files are optional
+      case 3: // Step 4 - Choice Screen
+        return true; // Choice screen doesn't need validation
+      case 4: // Step 5 - Sprinklers (if detailed)
         if (wizardData.sprinklers.has_sprinklers === true) {
           return wizardData.sprinklers.riser_location.trim() !== '';
         }
         return wizardData.sprinklers.has_sprinklers !== null;
-      case 3: // Step 4
+      case 5: // Step 6 - Elevators (if detailed)
         if (wizardData.elevators.has_elevators === true) {
           return wizardData.elevators.count >= 1;
         }
         return true;
-      case 4: // Step 5
-      case 5: // Step 6
-      case 6: // Step 7
+      case 6: // Step 7 - Occupancy Types (if detailed)
+      case 7: // Step 8 - Parts (if detailed)
         return true;
       default:
         return true;
@@ -157,7 +166,8 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 7));
+      const maxSteps = showDetailedQuestions ? 8 : 3;
+      setCurrentStep(prev => Math.min(prev + 1, maxSteps));
     } else {
       toast({
         title: "Missing Required Information",
@@ -169,6 +179,15 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
 
   const prevStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 0));
+  };
+
+  const handleMoreDetail = () => {
+    setShowDetailedQuestions(true);
+    setCurrentStep(4); // Move to sprinklers step
+  };
+
+  const handleBookMeeting = () => {
+    submitProject('booking');
   };
 
   const submitProject = async (redirectTo: 'booking' | 'details') => {
@@ -229,23 +248,33 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
       case 1:
         return <Step2Addons {...stepProps} />;
       case 2:
-        return <Step3Sprinklers {...stepProps} />;
-      case 3:
-        return <Step4Elevators {...stepProps} />;
-      case 4:
-        return <Step5OccupancyTypes {...stepProps} />;
-      case 5:
-        return <Step6PartsSpecifications {...stepProps} />;
-      case 6:
         return <Step7Files {...stepProps} />;
+      case 3:
+        return (
+          <ChoiceScreen 
+            onBookMeeting={handleBookMeeting}
+            onMoreDetail={handleMoreDetail}
+            isLoading={isLoading}
+          />
+        );
+      case 4:
+        return <Step3Sprinklers {...stepProps} />;
+      case 5:
+        return <Step4Elevators {...stepProps} />;
+      case 6:
+        return <Step5OccupancyTypes {...stepProps} />;
       case 7:
+        return <Step6PartsSpecifications {...stepProps} />;
+      case 8:
         return <FinalCTAScreen onSubmit={submitProject} isLoading={isLoading} />;
       default:
         return <Step1ProjectLocation {...stepProps} />;
     }
   };
 
-  const progress = ((currentStep + 1) / 8) * 100;
+  const progress = showDetailedQuestions 
+    ? ((currentStep + 1) / 9) * 100 
+    : ((currentStep + 1) / 4) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 py-8 px-4">
@@ -272,7 +301,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <span className="text-sm font-medium text-muted-foreground">
-              Step {currentStep + 1} of 8
+              Step {currentStep + 1} of {showDetailedQuestions ? 9 : 4}
             </span>
             <span className="text-sm font-medium text-primary">
               {STEP_TITLES[currentStep]}
@@ -288,7 +317,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
           </div>
 
           {/* Navigation */}
-          {currentStep < 7 && (
+          {(currentStep < 3 || (showDetailedQuestions && currentStep < 8)) && currentStep !== 3 && (
             <div className="flex justify-between items-center p-6 border-t bg-muted/20">
               <Button
                 variant="outline"
