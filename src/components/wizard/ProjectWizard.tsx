@@ -82,7 +82,11 @@ const STEP_TITLES = [
   'Complete'
 ];
 
-const ProjectWizard = () => {
+interface ProjectWizardProps {
+  onBack?: () => void;
+}
+
+const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -248,6 +252,18 @@ const ProjectWizard = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
+          {onBack && (
+            <div className="flex items-center mb-4">
+              <Button
+                variant="ghost"
+                onClick={onBack}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Back to Homepage
+              </Button>
+            </div>
+          )}
           <h1 className="text-3xl font-bold text-foreground mb-2">Project Creation Wizard</h1>
           <p className="text-muted-foreground">FireWire Designs - Professional Engineering Services</p>
         </div>

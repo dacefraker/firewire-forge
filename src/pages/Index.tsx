@@ -1,7 +1,7 @@
-import ProjectWizard from '@/components/wizard/ProjectWizard';
+import Homepage from '@/components/Homepage';
 
 const Index = () => {
-  return <ProjectWizard />;
+  return <Homepage />;
 };
 
 export default Index;
