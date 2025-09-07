@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const Navigation = () => {
   return (
@@ -21,6 +22,9 @@ const Navigation = () => {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
+            <Link to="/projects" className="text-foreground hover:text-primary transition-colors">
+              My Projects
+            </Link>
             <a href="#peace-of-mind" className="text-foreground hover:text-primary transition-colors">
               Peace Of Mind
             </a>
