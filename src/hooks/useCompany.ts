@@ -77,29 +77,32 @@ export const useCompany = () => {
     if (!user) return { error: new Error('No user found - please sign in again') };
 
     try {
-      // Debug: Check authentication state
-      console.log('Creating company for user:', user.id);
-      console.log('User session:', user);
+      // Wait a moment to ensure session is fully established
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Verify and refresh authentication before insert
-      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-      if (!currentUser || authError) {
-        console.error('Auth verification failed:', authError);
-        // Try to refresh the session
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          return { error: new Error('Authentication expired - please sign in again') };
-        }
+      // Verify current session and refresh if needed
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !currentSession?.access_token) {
+        console.error('Session verification failed:', sessionError);
+        return { error: new Error('Session expired - please refresh the page and sign in again') };
       }
 
-      // Create company
+      console.log('Session verified, access token present:', !!currentSession.access_token);
+
+      // Create company with verified session
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
         .insert([companyData])
         .select()
         .single();
 
-      if (companyError) return { error: companyError };
+      if (companyError) {
+        console.error('Company creation failed:', companyError);
+        return { error: companyError };
+      }
+
+      console.log('Company created successfully:', newCompany);
 
       // Update user profile with company_id
       const { error: profileError } = await supabase
@@ -107,13 +110,17 @@ export const useCompany = () => {
         .update({ company_id: newCompany.id })
         .eq('id', user.id);
 
-      if (profileError) return { error: profileError };
+      if (profileError) {
+        console.error('Profile update failed:', profileError);
+        return { error: profileError };
+      }
 
       setCompany(newCompany);
       setProfile(prev => prev ? { ...prev, company_id: newCompany.id } : null);
 
       return { data: newCompany, error: null };
     } catch (error) {
+      console.error('Unexpected error in createCompany:', error);
       return { error: error as Error };
     }
   };
