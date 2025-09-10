@@ -7,7 +7,7 @@ import { useCompany } from '@/hooks/useCompany';
 import { useToast } from '@/hooks/use-toast';
 
 const CompanySetup = () => {
-  const { createCompany } = useCompany();
+  const { createCompany, skipCompanySetup } = useCompany();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [companyData, setCompanyData] = useState({
@@ -43,6 +43,27 @@ const CompanySetup = () => {
       toast({
         title: "Company Created!",
         description: "Your company has been set up successfully."
+      });
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleSkip = async () => {
+    setIsLoading(true);
+    
+    const { error } = await skipCompanySetup();
+    
+    if (error) {
+      toast({
+        title: "Setup Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Company Setup Skipped",
+        description: "You can update your company details later from your profile."
       });
     }
     
@@ -104,9 +125,20 @@ const CompanySetup = () => {
               />
             </div>
             
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Setting Up...' : 'Create Company'}
-            </Button>
+            <div className="space-y-2">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Setting Up...' : 'Create Company'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full" 
+                disabled={isLoading}
+                onClick={handleSkip}
+              >
+                Skip for Now
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

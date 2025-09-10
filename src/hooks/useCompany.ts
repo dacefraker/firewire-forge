@@ -103,11 +103,30 @@ export const useCompany = () => {
     }
   };
 
+  const skipCompanySetup = async () => {
+    if (!user || !profile) return { error: new Error('No user or profile') };
+
+    try {
+      // Create a placeholder company with minimal data
+      const placeholderCompany = {
+        name: profile.email || 'My Company',
+        email: profile.email || '',
+        phone: '',
+        website: ''
+      };
+
+      return await createCompany(placeholderCompany);
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
   return {
     company,
     profile,
     loading,
     createCompany,
+    skipCompanySetup,
     needsCompanySetup: !loading && !company
   };
 };
