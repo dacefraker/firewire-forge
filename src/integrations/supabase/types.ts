@@ -109,6 +109,7 @@ export type Database = {
         Row: {
           billing_note: string | null
           created_at: string
+          created_by: string | null
           email: string | null
           id: string
           name: string
@@ -119,6 +120,7 @@ export type Database = {
         Insert: {
           billing_note?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           name: string
@@ -129,6 +131,7 @@ export type Database = {
         Update: {
           billing_note?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -558,7 +561,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_authenticated: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
