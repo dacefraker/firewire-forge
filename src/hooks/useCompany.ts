@@ -76,14 +76,26 @@ export const useCompany = () => {
   const createCompany = async (companyData: Omit<Company, 'id'>) => {
     if (!user) return { error: new Error('No user found - please sign in again') };
 
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY = 500;
+    const MAX_RETRIES = 5;
+    const RETRY_DELAY = 800;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        console.log(`Company creation attempt ${attempt}/${MAX_RETRIES}`);
+        console.log(`🔄 Company creation attempt ${attempt}/${MAX_RETRIES}`);
         
-        // Enhanced session verification with multiple approaches
+        // Step 1: Force session refresh to ensure latest JWT token
+        console.log('🔐 Refreshing session to ensure valid JWT...');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('❌ Session refresh failed:', refreshError);
+        } else {
+          console.log('✅ Session refreshed successfully');
+        }
+
+        // Step 2: Wait for session to propagate
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Step 3: Verify authentication state with detailed logging
         const [sessionResult, userResult] = await Promise.all([
           supabase.auth.getSession(),
           supabase.auth.getUser()
@@ -92,92 +104,107 @@ export const useCompany = () => {
         const { data: { session }, error: sessionError } = sessionResult;
         const { data: { user: currentUser }, error: userError } = userResult;
 
-        // Comprehensive authentication validation
-        if (sessionError || userError) {
-          console.error('Auth verification failed:', { sessionError, userError });
+        console.log('🔍 Auth state check:', {
+          hasSession: !!session,
+          hasAccessToken: !!session?.access_token,
+          hasUser: !!currentUser,
+          userId: currentUser?.id,
+          tokenLength: session?.access_token?.length,
+          sessionError: sessionError?.message,
+          userError: userError?.message
+        });
+
+        if (sessionError || userError || !session?.access_token || !currentUser) {
+          console.error('❌ Auth verification failed');
           if (attempt === MAX_RETRIES) {
-            return { error: new Error('Authentication verification failed - please sign in again') };
+            return { error: new Error('Authentication failed - please sign out and sign back in') };
           }
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
           continue;
         }
 
-        if (!session?.access_token || !currentUser) {
-          console.error('Missing session or user:', { 
-            hasSession: !!session, 
-            hasAccessToken: !!session?.access_token,
-            hasUser: !!currentUser 
-          });
-          if (attempt === MAX_RETRIES) {
-            return { error: new Error('Session expired - please refresh the page and sign in again') };
-          }
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
-          continue;
-        }
-
-        // Verify JWT token is valid and not expired
-        const tokenExpiry = session.expires_at ? new Date(session.expires_at * 1000) : null;
-        const now = new Date();
-        
-        if (tokenExpiry && tokenExpiry <= now) {
-          console.log('Token expired, attempting refresh...');
-          const { error: refreshError } = await supabase.auth.refreshSession();
-          if (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-            if (attempt === MAX_RETRIES) {
-              return { error: new Error('Session expired and refresh failed - please sign in again') };
+        // Step 4: Test database connection with auth context
+        console.log('🔍 Testing database auth context...');
+        try {
+          const { data: authTest, error: authTestError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (authTestError) {
+            console.error('❌ Database auth test failed:', authTestError);
+            if (attempt < MAX_RETRIES) {
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+              continue;
             }
+          } else {
+            console.log('✅ Database auth context verified');
+          }
+        } catch (dbError) {
+          console.error('❌ Database connection test failed:', dbError);
+          if (attempt < MAX_RETRIES) {
             await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
             continue;
           }
         }
 
-        console.log('Authentication verified successfully:', {
-          userId: currentUser.id,
-          tokenExpiry: tokenExpiry?.toISOString(),
-          hasAccessToken: !!session.access_token
-        });
-
-        // Ensure proper session establishment before database operations
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        // Create company with enhanced error handling
+        // Step 5: Attempt company creation with proper error handling
+        console.log('🏢 Creating company...');
         const { data: newCompany, error: companyError } = await supabase
           .from('companies')
-          .insert([companyData])
+          .insert([{
+            ...companyData,
+            // Ensure we're explicitly setting any required fields
+          }])
           .select()
           .single();
 
         if (companyError) {
-          console.error('Company creation failed:', companyError);
+          console.error('❌ Company creation failed:', {
+            error: companyError,
+            code: companyError.code,
+            message: companyError.message,
+            details: companyError.details,
+            hint: companyError.hint
+          });
           
-          // Handle specific RLS errors with retry logic
-          if (companyError.code === '42501' || companyError.message?.includes('row-level security')) {
-            console.log('RLS policy violation detected, retrying with fresh session...');
+          // Handle RLS policy violations specifically
+          if (companyError.code === '42501' || 
+              companyError.message?.includes('row-level security') ||
+              companyError.message?.includes('violates row-level security policy')) {
+            
+            console.log('🚨 RLS policy violation - auth.uid() likely null at database level');
+            
             if (attempt < MAX_RETRIES) {
-              // Force session refresh on RLS errors
-              await supabase.auth.refreshSession();
-              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+              console.log(`⏳ Retrying with extended wait time (attempt ${attempt + 1})...`);
+              // Longer wait for RLS issues to allow auth context to establish
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt * 2));
               continue;
             }
-            return { error: new Error('Unable to create company - authentication issue. Please refresh the page and try again.') };
+            
+            return { 
+              error: new Error('Authentication context failed to establish. Please sign out, sign back in, and try again.') 
+            };
           }
           
           return { error: companyError };
         }
 
-        console.log('Company created successfully:', newCompany);
+        console.log('✅ Company created successfully:', newCompany.id);
 
-        // Update user profile with company_id
+        // Step 6: Update profile with company_id
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ company_id: newCompany.id })
           .eq('id', currentUser.id);
 
         if (profileError) {
-          console.error('Profile update failed:', profileError);
+          console.error('❌ Profile update failed:', profileError);
           return { error: profileError };
         }
+
+        console.log('✅ Profile updated with company_id');
 
         // Update local state
         setCompany(newCompany);
@@ -186,9 +213,11 @@ export const useCompany = () => {
         return { data: newCompany, error: null };
 
       } catch (error) {
-        console.error(`Attempt ${attempt} failed:`, error);
+        console.error(`❌ Attempt ${attempt} failed:`, error);
         if (attempt === MAX_RETRIES) {
-          return { error: error as Error };
+          return { 
+            error: new Error('Company creation failed after multiple attempts. Please refresh the page and try again.') 
+          };
         }
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
       }
@@ -201,6 +230,8 @@ export const useCompany = () => {
     if (!user || !profile) return { error: new Error('No user or profile') };
 
     try {
+      console.log('⏭️ Skipping company setup - creating placeholder company...');
+      
       // Create a placeholder company with minimal data
       const placeholderCompany = {
         name: profile.email || 'My Company',
@@ -209,8 +240,10 @@ export const useCompany = () => {
         website: ''
       };
 
+      console.log('📝 Placeholder company data:', placeholderCompany);
       return await createCompany(placeholderCompany);
     } catch (error) {
+      console.error('❌ Skip company setup failed:', error);
       return { error: error as Error };
     }
   };
