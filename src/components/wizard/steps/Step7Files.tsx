@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Upload, FileText, X, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { WizardData } from '../ProjectWizard';
 
 interface Step7Props {
@@ -17,7 +19,7 @@ interface Step7Props {
 }
 
 interface UploadedFile {
-  id: number;
+  id: string;
   name: string;
   label: string;
   classification: string;
@@ -45,6 +47,7 @@ const FILE_LABELS = [
 
 const Step7Files = ({ data, updateData }: Step7Props) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [filesBeingSaved, setFilesBeingSaved] = useState<FileBeingSaved[]>([]);
   const [showPreSaveDialog, setShowPreSaveDialog] = useState(false);
@@ -71,7 +74,7 @@ const Step7Files = ({ data, updateData }: Step7Props) => {
   };
 
   const saveFile = async () => {
-    if (!currentFile) return;
+    if (!currentFile || !user) return;
 
     const finalLabel = fileLabel === 'Other' ? otherLabelText : fileLabel;
     const fileBeingSaved: FileBeingSaved = {
@@ -86,13 +89,10 @@ const Step7Files = ({ data, updateData }: Step7Props) => {
     setShowPreSaveDialog(false);
 
     try {
-      const formData = new FormData();
-      formData.append('file', currentFile);
-      formData.append('label', finalLabel);
-      formData.append('classification', classification);
-      formData.append('friendly_name', friendlyName);
-
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      // Create temporary file path for wizard uploads
+      const fileExt = currentFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const filePath = `temp/${user.id}/${fileName}`;
       
       // Simulate progress
       const progressInterval = setInterval(() => {
@@ -105,36 +105,58 @@ const Step7Files = ({ data, updateData }: Step7Props) => {
         );
       }, 200);
 
-      const response = await fetch('/api/wizard/files', {
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-TOKEN': csrfToken || ''
-        },
-        credentials: 'same-origin',
-        body: formData
-      });
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('project-files')
+        .upload(filePath, currentFile);
+
+      if (uploadError) throw uploadError;
+
+      // Insert file metadata into database
+      const { data: fileRecord, error: fileError } = await supabase
+        .from('files')
+        .insert([{
+          filename: friendlyName,
+          storage_path: uploadData.path,
+          storage_bucket: 'project-files',
+          mime_type: currentFile.type,
+          size_bytes: currentFile.size,
+          category: finalLabel,
+          owner_id: user.id,
+          project_id: null // Will be updated when project is created
+        }])
+        .select()
+        .single();
+
+      if (fileError) throw fileError;
 
       clearInterval(progressInterval);
 
-      if (response.ok) {
-        const result = await response.json();
-        const newFile: UploadedFile = result[0];
-        
-        setUploadedFiles(prev => [...prev, newFile]);
-        updateData({ 
-          uploaded_file_ids: [...data.uploaded_file_ids, newFile.id] 
-        });
+      // Get signed URL for display
+      const { data: urlData } = await supabase.storage
+        .from('project-files')
+        .createSignedUrl(uploadData.path, 3600);
 
-        setFilesBeingSaved(prev => prev.filter(f => f.file !== currentFile));
-        
-        toast({
-          title: "File Uploaded",
-          description: `${friendlyName} has been uploaded successfully.`
-        });
-      } else {
-        throw new Error('Upload failed');
-      }
+      const newFile: UploadedFile = {
+        id: fileRecord.id,
+        name: currentFile.name,
+        label: finalLabel,
+        classification,
+        friendly_name: friendlyName,
+        url: urlData?.signedUrl || ''
+      };
+      
+      setUploadedFiles(prev => [...prev, newFile]);
+      updateData({ 
+        uploaded_file_ids: [...data.uploaded_file_ids, fileRecord.id] 
+      });
+
+      setFilesBeingSaved(prev => prev.filter(f => f.file !== currentFile));
+      
+      toast({
+        title: "File Uploaded",
+        description: `${friendlyName} has been uploaded successfully.`
+      });
     } catch (error) {
       console.error('Error uploading file:', error);
       setFilesBeingSaved(prev => prev.filter(f => f.file !== currentFile));
@@ -148,11 +170,49 @@ const Step7Files = ({ data, updateData }: Step7Props) => {
     setCurrentFile(null);
   };
 
-  const removeFile = (fileId: number) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
-    updateData({
-      uploaded_file_ids: data.uploaded_file_ids.filter(id => id !== fileId)
-    });
+  const removeFile = async (fileId: string) => {
+    try {
+      // Find the file to get storage path
+      const fileToRemove = uploadedFiles.find(f => f.id === fileId);
+      if (fileToRemove) {
+        // Get file record from database to get storage path
+        const { data: fileRecord } = await supabase
+          .from('files')
+          .select('storage_path')
+          .eq('id', fileId)
+          .single();
+
+        if (fileRecord?.storage_path) {
+          // Remove from storage
+          await supabase.storage
+            .from('project-files')
+            .remove([fileRecord.storage_path]);
+        }
+
+        // Remove from database
+        await supabase
+          .from('files')
+          .delete()
+          .eq('id', fileId);
+      }
+
+      setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+      updateData({
+        uploaded_file_ids: data.uploaded_file_ids.filter(id => id !== fileId)
+      });
+
+      toast({
+        title: "File Removed",
+        description: "File has been removed successfully."
+      });
+    } catch (error) {
+      console.error('Error removing file:', error);
+      toast({
+        title: "Remove Failed",
+        description: "Failed to remove file. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const editFile = (file: UploadedFile) => {

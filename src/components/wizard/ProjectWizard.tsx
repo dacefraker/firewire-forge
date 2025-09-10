@@ -70,7 +70,7 @@ export interface WizardData {
   };
   
   // Step 7
-  uploaded_file_ids: number[];
+  uploaded_file_ids: string[];
 }
 
 const STEP_TITLES = [
@@ -240,6 +240,38 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
           }]);
 
         if (buildingError) throw buildingError;
+      }
+
+      // Handle file migration from temp to project folder
+      if (wizardData.uploaded_file_ids.length > 0) {
+        for (const fileId of wizardData.uploaded_file_ids) {
+          // Get file record
+          const { data: fileRecord, error: fileError } = await supabase
+            .from('files')
+            .select('*')
+            .eq('id', fileId)
+            .single();
+
+          if (fileError) continue;
+
+          // Move file from temp to project folder
+          const newPath = fileRecord.storage_path.replace(`temp/${user.id}/`, `projects/${project.id}/`);
+          
+          const { error: moveError } = await supabase.storage
+            .from('project-files')
+            .move(fileRecord.storage_path, newPath);
+
+          if (!moveError) {
+            // Update file record with project_id and new path
+            await supabase
+              .from('files')
+              .update({ 
+                project_id: project.id,
+                storage_path: newPath
+              })
+              .eq('id', fileId);
+          }
+        }
       }
 
       // Create project parts if any
