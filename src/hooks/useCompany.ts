@@ -9,6 +9,7 @@ interface Company {
   phone?: string;
   email?: string;
   billing_note?: string;
+  created_by?: string;
 }
 
 interface Profile {
@@ -155,7 +156,7 @@ export const useCompany = () => {
           .from('companies')
           .insert([{
             ...companyData,
-            // Ensure we're explicitly setting any required fields
+            created_by: currentUser.id
           }])
           .select()
           .single();
