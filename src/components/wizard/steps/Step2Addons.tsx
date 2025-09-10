@@ -103,16 +103,43 @@ const Step2Addons = ({ data, updateData }: Step2Props) => {
           </div>
           
           {data.addons.needs_data_sheets && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-              <DollarSign className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-green-800">
-                  Data Sheets Service - $60.00
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Our team will prepare comprehensive cut sheets for all fire alarm devices and equipment in your project.
-                </p>
+            <div className="mt-4 space-y-3">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                <DollarSign className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-800">
+                    Data Sheets Service - $60.00
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Our team will prepare comprehensive cut sheets for all fire alarm devices and equipment in your project.
+                  </p>
+                </div>
               </div>
+              
+              {(data.state === 'CA' || data.state === 'California') && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                  <DollarSign className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-800">
+                      CSFM Sheets (California Required) - $60.00
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      California State Fire Marshal sheets are required for all projects in California.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {(data.state === 'CA' || data.state === 'California') && (
+                <div className="p-3 bg-green-100 border border-green-300 rounded-lg">
+                  <p className="text-sm font-medium text-green-800">
+                    Total Data Sheets Service: $120.00
+                  </p>
+                  <p className="text-xs text-green-700">
+                    Includes standard data sheets + required CSFM sheets for California
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </Card>
