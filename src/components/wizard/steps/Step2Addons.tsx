@@ -58,10 +58,10 @@ const Step2Addons = ({ data, updateData }: Step2Props) => {
           </div>
           
           {data.addons.needs_pe_stamp === 'yes' && (
-            <div className="mt-4 p-4 bg-warning/10 border border-warning/20 rounded-lg flex items-start gap-3">
-              <DollarSign className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+              <DollarSign className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-warning-foreground">
+                <p className="text-sm font-medium text-green-800">
                   P.E. Stamping Fee
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -103,10 +103,10 @@ const Step2Addons = ({ data, updateData }: Step2Props) => {
           </div>
           
           {data.addons.needs_data_sheets && (
-            <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3">
-              <DollarSign className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+              <DollarSign className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-primary-foreground">
+                <p className="text-sm font-medium text-green-800">
                   Data Sheets Service - $60.00
                 </p>
                 <p className="text-sm text-muted-foreground">
