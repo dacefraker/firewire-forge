@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 import { WizardData } from '../ProjectWizard';
 
 interface Step2Props {
@@ -34,26 +34,33 @@ const Step2Addons = ({ data, updateData }: Step2Props) => {
           <Label className="text-lg font-medium mb-4 block">
             Does this project require a P.E. Stamp? <span className="text-destructive">*</span>
           </Label>
-          <div className="flex gap-4 mb-4">
+          <div className="flex gap-3 mb-4">
             <Button
-              variant={data.addons.needs_pe_stamp === true ? "default" : "outline"}
-              onClick={() => updateAddons('needs_pe_stamp', true)}
+              variant={data.addons.needs_pe_stamp === 'yes' ? "default" : "outline"}
+              onClick={() => updateAddons('needs_pe_stamp', 'yes')}
               className="flex-1"
             >
               Yes
             </Button>
             <Button
-              variant={data.addons.needs_pe_stamp === false ? "default" : "outline"}
-              onClick={() => updateAddons('needs_pe_stamp', false)}
+              variant={data.addons.needs_pe_stamp === 'no' ? "default" : "outline"}
+              onClick={() => updateAddons('needs_pe_stamp', 'no')}
               className="flex-1"
             >
               No
             </Button>
+            <Button
+              variant={data.addons.needs_pe_stamp === 'not_sure' ? "default" : "outline"}
+              onClick={() => updateAddons('needs_pe_stamp', 'not_sure')}
+              className="flex-1"
+            >
+              Not Sure
+            </Button>
           </div>
           
-          {data.addons.needs_pe_stamp && (
+          {data.addons.needs_pe_stamp === 'yes' && (
             <div className="mt-4 p-4 bg-warning/10 border border-warning/20 rounded-lg flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
+              <DollarSign className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-warning-foreground">
                   P.E. Stamping Fee
@@ -62,6 +69,14 @@ const Step2Addons = ({ data, updateData }: Step2Props) => {
                   This will add $950 stamping fee to this project.
                 </p>
               </div>
+            </div>
+          )}
+          
+          {data.addons.needs_pe_stamp === 'not_sure' && (
+            <div className="mt-4 p-4 bg-muted/50 border border-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                We'll discuss P.E. stamp requirements during project review. Fees will be determined based on project scope.
+              </p>
             </div>
           )}
         </Card>
@@ -89,10 +104,16 @@ const Step2Addons = ({ data, updateData }: Step2Props) => {
           </div>
           
           {data.addons.needs_data_sheets && (
-            <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                Our team will prepare comprehensive data sheets for all fire alarm devices and equipment in your project.
-              </p>
+            <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3">
+              <DollarSign className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-primary-foreground">
+                  Data Sheets Service - $60.00
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Our team will prepare comprehensive cut sheets for all fire alarm devices and equipment in your project.
+                </p>
+              </div>
             </div>
           )}
         </Card>

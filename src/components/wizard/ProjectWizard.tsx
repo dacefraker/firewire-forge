@@ -27,7 +27,7 @@ export interface WizardData {
   
   // Step 2
   addons: {
-    needs_pe_stamp: boolean;
+    needs_pe_stamp: 'yes' | 'no' | 'not_sure' | null;
     needs_data_sheets: boolean;
     notes: string;
   };
@@ -105,7 +105,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
     state: '',
     zip: '',
     addons: {
-      needs_pe_stamp: false,
+      needs_pe_stamp: null,
       needs_data_sheets: false,
       notes: ''
     },
@@ -218,7 +218,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
           city: wizardData.city,
           state: wizardData.state,
           postal_code: wizardData.zip,
-          pe_stamp_required: wizardData.addons.needs_pe_stamp,
+          pe_stamp_required: wizardData.addons.needs_pe_stamp === 'yes',
           notes: wizardData.addons.notes,
           created_by: user.id,
           status: 'new'
