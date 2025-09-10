@@ -31,18 +31,39 @@ const CompanySetup = () => {
 
     setIsLoading(true);
 
-    const { error } = await createCompany(companyData);
-    
-    if (error) {
+    try {
+      console.log('Submitting company data:', companyData);
+      const { error } = await createCompany(companyData);
+      
+      if (error) {
+        console.error('Company creation error:', error);
+        
+        // Handle specific RLS errors
+        if (error.message?.includes('row-level security') || error.message?.includes('RLS')) {
+          toast({
+            title: "Authentication Issue",
+            description: "Please refresh the page and try signing in again.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Setup Failed",
+            description: error.message || "Failed to create company. Please try again.",
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "Company Created!",
+          description: "Your company has been set up successfully."
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
       toast({
-        title: "Setup Failed",
-        description: error.message,
+        title: "Setup Failed", 
+        description: "An unexpected error occurred. Please refresh and try again.",
         variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Company Created!",
-        description: "Your company has been set up successfully."
       });
     }
     

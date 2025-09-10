@@ -74,9 +74,24 @@ export const useCompany = () => {
   }, [user]);
 
   const createCompany = async (companyData: Omit<Company, 'id'>) => {
-    if (!user) return { error: new Error('No user') };
+    if (!user) return { error: new Error('No user found - please sign in again') };
 
     try {
+      // Debug: Check authentication state
+      console.log('Creating company for user:', user.id);
+      console.log('User session:', user);
+      
+      // Verify and refresh authentication before insert
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+      if (!currentUser || authError) {
+        console.error('Auth verification failed:', authError);
+        // Try to refresh the session
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          return { error: new Error('Authentication expired - please sign in again') };
+        }
+      }
+
       // Create company
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
