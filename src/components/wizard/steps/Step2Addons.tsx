@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { DollarSign } from 'lucide-react';
 import { WizardData } from '../ProjectWizard';
@@ -117,21 +116,6 @@ const Step2Addons = ({ data, updateData }: Step2Props) => {
             </div>
           )}
         </Card>
-
-        {/* Add-on Notes */}
-        <div>
-          <Label htmlFor="addon-notes" className="text-sm font-medium">
-            Add-on Notes
-          </Label>
-          <Textarea
-            id="addon-notes"
-            value={data.addons.notes}
-            onChange={(e) => updateAddons('notes', e.target.value)}
-            placeholder="Any additional notes about add-ons or special requirements..."
-            className="mt-1"
-            rows={4}
-          />
-        </div>
       </div>
     </div>
   );
