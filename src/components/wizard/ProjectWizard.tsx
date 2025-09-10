@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useCompany } from '@/hooks/useCompany';
 import Step1ProjectLocation from './steps/Step1ProjectLocation';
 import Step2Addons from './steps/Step2Addons';
 import Step3Sprinklers from './steps/Step3Sprinklers';
@@ -90,6 +92,8 @@ interface ProjectWizardProps {
 
 const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { company } = useCompany();
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showDetailedQuestions, setShowDetailedQuestions] = useState(false);
@@ -192,43 +196,118 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
 
   const submitProject = async (redirectTo: 'booking' | 'details') => {
     setIsLoading(true);
-    try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-TOKEN': csrfToken || ''
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify(wizardData)
+    
+    if (!user || !company) {
+      toast({
+        title: "Error",
+        description: "You must be logged in and have a company set up to create projects.",
+        variant: "destructive",
       });
+      setIsLoading(false);
+      return;
+    }
 
-      if (!response.ok) {
-        throw new Error('Failed to submit project');
+    try {
+      // Create the project
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .insert([{
+          company_id: company.id,
+          name: wizardData.name,
+          address_line1: wizardData.address1,
+          city: wizardData.city,
+          state: wizardData.state,
+          postal_code: wizardData.zip,
+          pe_stamp_required: wizardData.addons.needs_pe_stamp,
+          notes: wizardData.addons.notes,
+          created_by: user.id,
+          status: 'new'
+        }])
+        .select()
+        .single();
+
+      if (projectError) throw projectError;
+
+      // Create project building details
+      if (wizardData.sprinklers.has_sprinklers !== null || wizardData.elevators.has_elevators !== null) {
+        const { error: buildingError } = await supabase
+          .from('project_building')
+          .insert([{
+            project_id: project.id,
+            occupancy: wizardData.occupancy_types.join(', '),
+            sprinklers: wizardData.sprinklers.has_sprinklers,
+            sprinkler_notes: wizardData.sprinklers.narrative,
+            elevators: wizardData.elevators.has_elevators,
+            elevator_recall: wizardData.elevators.machine_room_location,
+          }]);
+
+        if (buildingError) throw buildingError;
       }
 
-      const result = await response.json();
+      // Create project parts if any
+      if (wizardData.parts.specified.length > 0) {
+        for (const partSpec of wizardData.parts.specified) {
+          if (partSpec.part && partSpec.manufacturer) {
+            // Insert or get existing part
+            const { data: part, error: partError } = await supabase
+              .from('parts')
+              .upsert([{
+                manufacturer: partSpec.manufacturer,
+                model: partSpec.model || 'Unknown',
+                description: partSpec.part,
+                category: 'fire_alarm'
+              }], { onConflict: 'manufacturer,model' })
+              .select()
+              .single();
+
+            if (partError) throw partError;
+
+            // Link part to project
+            const { error: projectPartError } = await supabase
+              .from('project_parts')
+              .insert([{
+                project_id: project.id,
+                part_id: part.id,
+                qty: 1,
+                notes: partSpec.is_new ? 'New' : 'Existing'
+              }]);
+
+            if (projectPartError) throw projectPartError;
+          }
+        }
+      }
+
+      // Log project creation event
+      const { error: eventError } = await supabase
+        .from('project_events')
+        .insert([{
+          project_id: project.id,
+          actor_id: user.id,
+          event_type: 'project_created',
+          data: { wizard_completed: true }
+        }]);
+
+      if (eventError) console.error('Event logging error:', eventError);
       
       toast({
-        title: "Project Created Successfully",
-        description: "Your project has been submitted to our engineering team."
+        title: "Success!",
+        description: "Your project has been created successfully.",
       });
 
-      // Navigate based on CTA pressed
+      // Handle redirect based on user choice
       if (redirectTo === 'booking') {
-        window.location.href = `/projects/${result.id}/booking`;
-      } else {
-        window.location.href = `/projects/${result.id}/details`;
+        window.location.href = '/booking'; // Replace with actual booking URL
+      } else if (redirectTo === 'details') {
+        // Navigate to project details or stay in wizard
+        console.log('Project created:', project.id);
       }
+      
     } catch (error) {
       console.error('Error submitting project:', error);
       toast({
         title: "Error",
-        description: "Failed to submit project. Please try again.",
-        variant: "destructive"
+        description: "There was an error creating your project. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);

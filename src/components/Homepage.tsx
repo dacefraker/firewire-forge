@@ -2,9 +2,15 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Navigation from './Navigation';
 import ProjectWizard from './wizard/ProjectWizard';
+import { useAuth } from '@/hooks/useAuth';
 
 const Homepage = () => {
   const [showWizard, setShowWizard] = useState(false);
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   if (showWizard) {
     return <ProjectWizard onBack={() => setShowWizard(false)} />;
@@ -12,6 +18,11 @@ const Homepage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="fixed top-4 right-4 z-50">
+        <Button variant="outline" onClick={handleSignOut}>
+          Sign Out
+        </Button>
+      </div>
       <Navigation />
       
       <main className="relative overflow-hidden">
