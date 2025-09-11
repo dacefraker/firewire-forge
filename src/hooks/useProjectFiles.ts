@@ -57,7 +57,7 @@ export const useProjectFiles = (projectId: string | null) => {
       // Create unique file path
       const fileExt = file.name.split('.').pop();
       const uniqueName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      const filePath = `projects/${projectId}/${uniqueName}`;
+      const filePath = `${projectId}/${uniqueName}`;
 
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage

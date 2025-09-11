@@ -287,7 +287,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
           if (fileError) continue;
 
           // Move file from temp to project folder
-          const newPath = fileRecord.storage_path.replace(`temp/${user.id}/`, `projects/${project.id}/`);
+          const newPath = fileRecord.storage_path.replace(`temp/${user.id}/`, `${project.id}/`);
           
           const { error: moveError } = await supabase.storage
             .from('project-files')
