@@ -27,6 +27,7 @@ const projectSchema = z.object({
   postal_code: z.string().optional(),
   notes: z.string().optional(),
   pe_stamp_required: z.boolean().optional(),
+  data_sheets_required: z.boolean().optional(),
   due_at: z.string().optional(),
   opened_at: z.string().optional(),
   closed_at: z.string().optional(),
@@ -63,6 +64,7 @@ export default function ProjectEdit() {
       postal_code: "",
       notes: "",
       pe_stamp_required: false,
+      data_sheets_required: false,
       due_at: "",
       opened_at: "",
       closed_at: "",
@@ -94,6 +96,7 @@ export default function ProjectEdit() {
         postal_code: project.postal_code || "",
         notes: project.notes || "",
         pe_stamp_required: project.pe_stamp_required || false,
+        data_sheets_required: project.data_sheets_required || false,
         due_at: project.due_at || "",
         opened_at: project.opened_at || "",
         closed_at: project.closed_at || "",
@@ -295,13 +298,24 @@ export default function ProjectEdit() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="pe_stamp_required"
-                  checked={form.watch("pe_stamp_required")}
-                  onCheckedChange={(checked) => form.setValue("pe_stamp_required", checked)}
-                />
-                <Label htmlFor="pe_stamp_required">P.E. Stamp Required</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="pe_stamp_required"
+                    checked={form.watch("pe_stamp_required")}
+                    onCheckedChange={(checked) => form.setValue("pe_stamp_required", checked)}
+                  />
+                  <Label htmlFor="pe_stamp_required">P.E. Stamp Required</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="data_sheets_required"
+                    checked={form.watch("data_sheets_required")}
+                    onCheckedChange={(checked) => form.setValue("data_sheets_required", checked)}
+                  />
+                  <Label htmlFor="data_sheets_required">Cut Sheets Required</Label>
+                </div>
               </div>
 
               <div className="space-y-2">

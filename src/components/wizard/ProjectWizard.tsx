@@ -249,6 +249,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
           state: wizardData.state,
           postal_code: wizardData.zip,
           pe_stamp_required: wizardData.addons.needs_pe_stamp === 'yes',
+          data_sheets_required: wizardData.addons.needs_data_sheets,
           notes: null,
           created_by: user.id,
           status: redirectTo === 'draft' ? 'draft' : 'new'

@@ -17,6 +17,7 @@ export interface Project {
   longitude: number | null;
   notes: string | null;
   pe_stamp_required: boolean | null;
+  data_sheets_required: boolean | null;
   due_at: string | null;
   opened_at: string | null;
   closed_at: string | null;

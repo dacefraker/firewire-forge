@@ -176,6 +176,9 @@ export default function Projects() {
                       {project.pe_stamp_required && (
                         <Badge variant="outline" className="text-xs">P.E. Stamp Required</Badge>
                       )}
+                      {project.data_sheets_required && (
+                        <Badge variant="outline" className="text-xs">Cut Sheets Required</Badge>
+                      )}
                       {project.number && (
                         <Badge variant="outline" className="text-xs">#{project.number}</Badge>
                       )}

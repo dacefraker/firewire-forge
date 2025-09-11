@@ -479,6 +479,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           created_by: string | null
+          data_sheets_required: boolean | null
           due_at: string | null
           id: string
           latitude: number | null
@@ -502,6 +503,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           created_by?: string | null
+          data_sheets_required?: boolean | null
           due_at?: string | null
           id?: string
           latitude?: number | null
@@ -525,6 +527,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           created_by?: string | null
+          data_sheets_required?: boolean | null
           due_at?: string | null
           id?: string
           latitude?: number | null

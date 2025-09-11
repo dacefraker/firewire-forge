@@ -15,6 +15,7 @@ export interface Project {
   postal_code?: string;
   notes?: string;
   pe_stamp_required?: boolean;
+  data_sheets_required?: boolean;
   due_at?: string;
   opened_at?: string;
   closed_at?: string;
