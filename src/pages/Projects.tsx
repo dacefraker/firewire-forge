@@ -247,7 +247,12 @@ export default function Projects() {
                   >
                     View Files
                   </Button>
-                  <Button variant="default" size="sm" className="flex-1">
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate(`/projects/${project.id}/edit`)}
+                  >
                     Edit Project
                   </Button>
                 </div>

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
+import ProjectEdit from "./pages/ProjectEdit";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./components/auth/AuthPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -27,6 +28,11 @@ const App = () => (
           <Route path="/projects" element={
             <ProtectedRoute>
               <Projects />
+            </ProtectedRoute>
+          } />
+          <Route path="/projects/:id/edit" element={
+            <ProtectedRoute>
+              <ProjectEdit />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
