@@ -5,7 +5,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FileText } from 'lucide-react';
+import { useState } from 'react';
 import { WizardData } from '../ProjectWizard';
+import PlansSelectionModal from '../PlansSelectionModal';
+import { useToast } from '@/hooks/use-toast';
+
+interface UploadedFile {
+  id: string;
+  filename: string;
+  category: string | null;
+  size_bytes: number | null;
+  storage_path: string;
+}
 
 interface Step4Props {
   data: WizardData;
@@ -25,6 +36,10 @@ const ELEVATOR_USE_CASES = [
 ];
 
 const Step4Elevators = ({ data, updateData }: Step4Props) => {
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
+  const { toast } = useToast();
+
   const updateElevators = (key: keyof WizardData['elevators'], value: any) => {
     updateData({
       elevators: {
@@ -44,8 +59,23 @@ const Step4Elevators = ({ data, updateData }: Step4Props) => {
   };
 
   const openGetFromPlansModal = () => {
-    // TODO: Implement modal to select from uploaded files
-    console.log('Open Get from Plans modal');
+    setShowPlansModal(true);
+  };
+
+  const handleFilesSelected = (files: UploadedFile[]) => {
+    setSelectedFiles(files);
+    setShowPlansModal(false);
+    
+    // Update wizard data with file IDs
+    const fileIds = files.map(f => f.id);
+    updateData({
+      uploaded_file_ids: [...(data.uploaded_file_ids || []), ...fileIds]
+    });
+
+    toast({
+      title: "Files selected",
+      description: `${files.length} file(s) selected for elevator information.`,
+    });
   };
 
   return (
@@ -208,6 +238,17 @@ const Step4Elevators = ({ data, updateData }: Step4Props) => {
           </>
         )}
       </div>
+
+      {/* Plans Selection Modal */}
+      <PlansSelectionModal
+        open={showPlansModal}
+        onOpenChange={setShowPlansModal}
+        onFilesSelected={handleFilesSelected}
+        title="Select Plans with Elevator Information"
+        description="Choose files that contain elevator details, specifications, or machine room locations."
+        updateData={updateData}
+        uploadedFileIds={data.uploaded_file_ids || []}
+      />
     </div>
   );
 };
