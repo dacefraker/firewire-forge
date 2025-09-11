@@ -160,6 +160,8 @@ const Step3Sprinklers = ({ data, updateData }: Step3Props) => {
         title="Select Plans for Sprinkler Information"
         description="Choose the files that contain information about the building's sprinkler system."
         projectId={null} // In wizard mode, we use temporary files
+        updateData={updateData}
+        uploadedFileIds={data.uploaded_file_ids}
       />
     </div>
   );
