@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -5,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { WizardData } from '../ProjectWizard';
+import PlansSelectionModal from '../PlansSelectionModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface Step3Props {
   data: WizardData;
@@ -13,6 +16,10 @@ interface Step3Props {
 }
 
 const Step3Sprinklers = ({ data, updateData }: Step3Props) => {
+  const { toast } = useToast();
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
+
   const updateSprinklers = (key: keyof WizardData['sprinklers'], value: any) => {
     updateData({
       sprinklers: {
@@ -23,8 +30,15 @@ const Step3Sprinklers = ({ data, updateData }: Step3Props) => {
   };
 
   const openGetFromPlansModal = () => {
-    // TODO: Implement modal to select from uploaded files
-    console.log('Open Get from Plans modal');
+    setShowPlansModal(true);
+  };
+
+  const handleFilesSelected = (files: any[]) => {
+    setSelectedFiles(files);
+    toast({
+      title: "Files Selected",
+      description: `${files.length} file(s) selected for sprinkler reference.`,
+    });
   };
 
   return (
@@ -114,7 +128,39 @@ const Step3Sprinklers = ({ data, updateData }: Step3Props) => {
             />
           </div>
         )}
+
+        {/* Selected Files Display */}
+        {selectedFiles.length > 0 && (
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Referenced Files:</span>
+            </div>
+            <div className="space-y-2">
+              {selectedFiles.map((file) => (
+                <div key={file.id} className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
+                  <span>{file.filename}</span>
+                  {file.category && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                      {file.category}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
+
+      {/* Plans Selection Modal */}
+      <PlansSelectionModal
+        open={showPlansModal}
+        onOpenChange={setShowPlansModal}
+        onFilesSelected={handleFilesSelected}
+        title="Select Plans for Sprinkler Information"
+        description="Choose the files that contain information about the building's sprinkler system."
+        projectId={null} // In wizard mode, we use temporary files
+      />
     </div>
   );
 };
