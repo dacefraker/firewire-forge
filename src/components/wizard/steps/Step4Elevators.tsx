@@ -55,6 +55,21 @@ const Step4Elevators = ({ data, updateData }: Step4Props) => {
         <p className="text-muted-foreground">Tell us about elevators in the building</p>
       </div>
 
+      <div className="flex items-center justify-between mb-6">
+        <div></div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            // TODO: Implement save as draft functionality
+            console.log('Save as draft');
+          }}
+          className="flex items-center gap-2"
+        >
+          Save as Draft
+        </Button>
+      </div>
+
       <div className="space-y-6">
         {/* Has Elevators */}
         <Card className="p-6">
