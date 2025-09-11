@@ -192,7 +192,39 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
     submitProject('booking');
   };
 
-  const submitProject = async (redirectTo: 'booking' | 'details') => {
+  const handleSaveDraft = async () => {
+    setIsLoading(true);
+    
+    try {
+      if (!user || !company) {
+        toast({
+          title: "Error",
+          description: "Please sign in to save your project.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save project as draft with current wizard data
+      await submitProject('draft');
+      
+      toast({
+        title: "Draft Saved",
+        description: "Your project has been saved as a draft. You can continue later.",
+      });
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save draft. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const submitProject = async (redirectTo: 'booking' | 'details' | 'draft') => {
     setIsLoading(true);
     
     if (!user || !company) {
@@ -219,7 +251,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
           pe_stamp_required: wizardData.addons.needs_pe_stamp === 'yes',
           notes: null,
           created_by: user.id,
-          status: 'new'
+          status: redirectTo === 'draft' ? 'draft' : 'new'
         }])
         .select()
         .single();
@@ -330,6 +362,9 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
       } else if (redirectTo === 'details') {
         // Navigate to project details or stay in wizard
         console.log('Project created:', project.id);
+      } else if (redirectTo === 'draft') {
+        // For draft, just stay on current page
+        console.log('Project saved as draft:', project.id);
       }
       
     } catch (error) {
@@ -363,6 +398,7 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
           <ChoiceScreen 
             onBookMeeting={handleBookMeeting}
             onMoreDetail={handleMoreDetail}
+            onSaveDraft={handleSaveDraft}
             isLoading={isLoading}
           />
         );

@@ -5,12 +5,27 @@ import { Calendar, FileText, Clock, CheckCircle } from 'lucide-react';
 interface ChoiceScreenProps {
   onBookMeeting: () => void;
   onMoreDetail: () => void;
+  onSaveDraft: () => void;
   isLoading: boolean;
 }
 
-const ChoiceScreen = ({ onBookMeeting, onMoreDetail, isLoading }: ChoiceScreenProps) => {
+const ChoiceScreen = ({ onBookMeeting, onMoreDetail, onSaveDraft, isLoading }: ChoiceScreenProps) => {
   return (
-    <div className="max-w-3xl mx-auto text-center space-y-8">
+    <div className="max-w-3xl mx-auto space-y-8">
+      <div className="flex items-center justify-between mb-6">
+        <div></div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onSaveDraft}
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          Save as Draft
+        </Button>
+      </div>
+      
+      <div className="text-center space-y-8">
       <div className="space-y-4">
         <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto">
           <CheckCircle className="h-8 w-8 text-success" />
@@ -79,10 +94,11 @@ const ChoiceScreen = ({ onBookMeeting, onMoreDetail, isLoading }: ChoiceScreenPr
         </div>
       </div>
 
-      <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-4">
-        <p>
-          <strong>Note:</strong> You can always add more details later or schedule a meeting after completing the detailed questions.
-        </p>
+        <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-4">
+          <p>
+            <strong>Note:</strong> You can always add more details later or schedule a meeting after completing the detailed questions.
+          </p>
+        </div>
       </div>
     </div>
   );
