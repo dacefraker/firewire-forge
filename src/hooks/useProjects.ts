@@ -196,6 +196,18 @@ export const useProjects = () => {
           fetchProjects();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'files'
+        },
+        () => {
+          // Refresh projects when files change to update file counts
+          fetchProjects();
+        }
+      )
       .subscribe();
 
     return () => {
