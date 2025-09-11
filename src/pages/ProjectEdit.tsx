@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,7 +80,7 @@ export default function ProjectEdit() {
   });
 
   // Update form when project data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (project) {
       const buildingData = project.project_building;
       form.reset({
