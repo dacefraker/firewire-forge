@@ -8,11 +8,15 @@ import { MapPin, Calendar, FileText, Users, Building, Wrench, Search, Loader2, A
 import { useNavigate } from "react-router-dom";
 import { useProjects, Project } from "@/hooks/useProjects";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ProjectFilesModal from "@/components/ProjectFilesModal";
 
 export default function Projects() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedProjectName, setSelectedProjectName] = useState<string>("");
+  const [showFilesModal, setShowFilesModal] = useState(false);
   const { projects, loading, error, refetch } = useProjects();
 
   const filteredProjects = projects.filter(project => {
@@ -39,6 +43,12 @@ export default function Projects() {
   const formatAddress = (project: Project) => {
     const parts = [project.city, project.state, project.postal_code].filter(Boolean);
     return parts.length > 0 ? parts.join(', ') : 'No address specified';
+  };
+
+  const handleViewFiles = (project: Project) => {
+    setSelectedProjectId(project.id);
+    setSelectedProjectName(project.name);
+    setShowFilesModal(true);
   };
 
   if (loading) {
@@ -229,8 +239,13 @@ export default function Projects() {
                 )}
 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    View Details
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleViewFiles(project)}
+                  >
+                    View Files
                   </Button>
                   <Button variant="default" size="sm" className="flex-1">
                     Edit Project
@@ -253,6 +268,16 @@ export default function Projects() {
           </div>
         )}
       </div>
+
+      {/* Project Files Modal */}
+      {selectedProjectId && (
+        <ProjectFilesModal
+          open={showFilesModal}
+          onOpenChange={setShowFilesModal}
+          projectId={selectedProjectId}
+          projectName={selectedProjectName}
+        />
+      )}
     </div>
   );
 }
