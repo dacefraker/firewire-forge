@@ -277,32 +277,59 @@ const ProjectWizard = ({ onBack }: ProjectWizardProps = {}) => {
 
       // Handle file migration from temp to project folder
       if (wizardData.uploaded_file_ids.length > 0) {
+        console.log('Migrating files:', wizardData.uploaded_file_ids);
+        
         for (const fileId of wizardData.uploaded_file_ids) {
-          // Get file record
-          const { data: fileRecord, error: fileError } = await supabase
-            .from('files')
-            .select('*')
-            .eq('id', fileId)
-            .single();
-
-          if (fileError) continue;
-
-          // Move file from temp to project folder
-          const newPath = fileRecord.storage_path.replace(`temp/${user.id}/`, `${project.id}/`);
-          
-          const { error: moveError } = await supabase.storage
-            .from('project-files')
-            .move(fileRecord.storage_path, newPath);
-
-          if (!moveError) {
-            // Update file record with project_id and new path
-            await supabase
+          try {
+            // Get file record
+            const { data: fileRecord, error: fileError } = await supabase
               .from('files')
-              .update({ 
-                project_id: project.id,
-                storage_path: newPath
-              })
-              .eq('id', fileId);
+              .select('*')
+              .eq('id', fileId)
+              .maybeSingle();
+
+            if (fileError || !fileRecord) {
+              console.error('Failed to get file record:', fileError);
+              continue;
+            }
+
+            // Move file from temp to project folder if it's a temp file
+            if (fileRecord.storage_path.includes(`temp/${user.id}/`)) {
+              const newPath = fileRecord.storage_path.replace(`temp/${user.id}/`, `${project.id}/`);
+              
+              const { error: moveError } = await supabase.storage
+                .from('project-files')
+                .move(fileRecord.storage_path, newPath);
+
+              if (moveError) {
+                console.error('Storage move failed, updating database anyway:', moveError);
+              }
+
+              // Update file record with project_id and new path (even if move failed)
+              const { error: updateError } = await supabase
+                .from('files')
+                .update({ 
+                  project_id: project.id,
+                  storage_path: newPath
+                })
+                .eq('id', fileId);
+
+              if (updateError) {
+                console.error('Failed to update file record:', updateError);
+              }
+            } else {
+              // File isn't temp, just associate it with the project
+              const { error: updateError } = await supabase
+                .from('files')
+                .update({ project_id: project.id })
+                .eq('id', fileId);
+
+              if (updateError) {
+                console.error('Failed to associate file with project:', updateError);
+              }
+            }
+          } catch (err) {
+            console.error('Error migrating file:', fileId, err);
           }
         }
       }
