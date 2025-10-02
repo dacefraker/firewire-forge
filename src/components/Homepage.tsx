@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Navigation from './Navigation';
 import ProjectWizard from './wizard/ProjectWizard';
@@ -7,6 +7,11 @@ import { useAuth } from '@/hooks/useAuth';
 const Homepage = () => {
   const [showWizard, setShowWizard] = useState(false);
   const { signOut } = useAuth();
+
+  const placeholderWidths = useMemo(() => ({
+    generalNotes: Array.from({ length: 8 }, () => `${Math.random() * 60 + 40}%`),
+    codeLines: Array.from({ length: 4 }, () => `${Math.random() * 50 + 30}%`)
+  }), []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -106,8 +111,8 @@ const Homepage = () => {
                 <div className="mt-6 border border-muted rounded-lg p-6 bg-card/10 backdrop-blur-sm">
                   <div className="text-sm text-muted-foreground font-mono mb-4">General Notes</div>
                   <div className="space-y-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((line) => (
-                      <div key={line} className="h-2 bg-muted-foreground/15 rounded" style={{ width: `${Math.random() * 60 + 40}%` }}></div>
+                    {placeholderWidths.generalNotes.map((width, index) => (
+                      <div key={`general-note-${index}`} className="h-2 bg-muted-foreground/15 rounded" style={{ width }}></div>
                     ))}
                   </div>
                 </div>
@@ -132,8 +137,8 @@ const Homepage = () => {
                   <div className="text-sm text-muted-foreground font-mono mb-4">Applicable Codes</div>
                   <div className="text-xs text-muted-foreground/60 font-mono">2018 NATIONAL FIRE PROTECTION ASSOCIATION</div>
                   <div className="mt-2 space-y-1">
-                    {[1, 2, 3, 4].map((line) => (
-                      <div key={line} className="h-1.5 bg-muted-foreground/10 rounded" style={{ width: `${Math.random() * 50 + 30}%` }}></div>
+                    {placeholderWidths.codeLines.map((width, index) => (
+                      <div key={`code-line-${index}`} className="h-1.5 bg-muted-foreground/10 rounded" style={{ width }}></div>
                     ))}
                   </div>
                 </div>
