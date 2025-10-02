@@ -323,15 +323,6 @@ export const FileUploader = ({
     }
   };
 
-  const handleFilesSaved = () => {
-    // Refresh the file list when enhanced files are saved
-    if (mode === 'project' && projectId) {
-      // Files are already managed by the parent component in project mode
-      // Just trigger the callback
-      onFilesChange?.(files);
-    }
-  };
-
   const isViewableFile = (mimeType: string | null) => {
     if (!mimeType) return false;
     return (
@@ -675,8 +666,6 @@ export const FileUploader = ({
             handleDownload(viewingFile);
           }
         }}
-        projectId={projectId}
-        onFilesSaved={handleFilesSaved}
       />
     </div>
   );
