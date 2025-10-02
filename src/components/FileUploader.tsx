@@ -16,11 +16,13 @@ import {
   Search,
   Plus,
   AlertCircle,
-  Check
+  Check,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import FileViewer from './FileViewer';
 
 // Enhanced file categories with more specific types
 export const ENHANCED_FILE_CATEGORIES = [
@@ -97,6 +99,9 @@ export const FileUploader = ({
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
   const [editingFileName, setEditingFileName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [viewingFile, setViewingFile] = useState<FileRecord | null>(null);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const filteredFiles = files.filter(file =>
     file.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -309,6 +314,23 @@ export const FileUploader = ({
     }
   };
 
+  const handleView = async (file: FileRecord) => {
+    const url = await getDownloadUrl(file.storage_path);
+    if (url) {
+      setViewingFile(file);
+      setViewerUrl(url);
+      setIsViewerOpen(true);
+    }
+  };
+
+  const isViewableFile = (mimeType: string | null) => {
+    if (!mimeType) return false;
+    return (
+      mimeType === 'application/pdf' ||
+      mimeType.startsWith('image/')
+    );
+  };
+
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return 'Unknown size';
     const mb = bytes / (1024 * 1024);
@@ -474,6 +496,15 @@ export const FileUploader = ({
                 
                 {editingFileId !== file.id && (
                   <div className="flex items-center gap-2">
+                    {isViewableFile(file.mime_type) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleView(file)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
                     {mode === 'project' && (
                       <Button
                         variant="outline"
@@ -619,6 +650,23 @@ export const FileUploader = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* File Viewer */}
+      <FileViewer
+        file={viewingFile}
+        fileUrl={viewerUrl}
+        isOpen={isViewerOpen}
+        onClose={() => {
+          setIsViewerOpen(false);
+          setViewingFile(null);
+          setViewerUrl(null);
+        }}
+        onDownload={() => {
+          if (viewingFile) {
+            handleDownload(viewingFile);
+          }
+        }}
+      />
     </div>
   );
 };
